@@ -1,0 +1,13 @@
+{
+  "rewrites": [
+    { "source": "/api/binance", "destination": "/api/binance" },
+    { "source": "/api/scan", "destination": "/api/scan" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "crons": [
+    {
+      "path": "/api/scan",
+      "schedule": "0 * * * *"
+    }
+  ]
+}

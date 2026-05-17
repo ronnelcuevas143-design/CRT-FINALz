@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRT Scanner Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#05070d;--surface:#0b0f1a;--border:#1a2332;--accent:#00e5ff;--bull:#00ff9d;--bear:#ff4466;--warn:#ffb700;--text:#dce8f5;--muted:#4d6070;--muted2:#7a9ab0;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;padding-bottom:80px;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 80% 10%,rgba(0,229,255,0.05) 0%,transparent 70%),radial-gradient(ellipse 40% 30% at 10% 80%,rgba(0,255,157,0.03) 0%,transparent 60%);pointer-events:none;z-index:0;}
+.wrap{max-width:860px;margin:0 auto;padding:24px 16px;position:relative;z-index:1;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:4px;color:var(--accent);}
+.logo-sub{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-top:3px;margin-bottom:20px;}
+
+/* Settings */
+.settings{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:16px;}
+.settings-title{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;}
+.settings-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;}
+.sf{display:flex;flex-direction:column;gap:4px;flex:1;min-width:130px;}
+.sl{font-size:9px;color:var(--muted2);letter-spacing:1px;text-transform:uppercase;}
+.si{background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:8px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text);outline:none;width:100%;}
+.si:focus{border-color:var(--accent);}
+.test-btn{background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.3);color:var(--accent);border-radius:5px;padding:8px 14px;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;white-space:nowrap;}
+.tg-status{font-family:'DM Mono',monospace;font-size:10px;margin-top:8px;padding:5px 10px;border-radius:4px;display:none;}
+.tg-status.ok{background:rgba(0,255,157,0.1);color:var(--bull);}
+.tg-status.err{background:rgba(255,68,102,0.1);color:var(--bear);}
+
+/* Search & Scan */
+.search-row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.search-input{flex:1;min-width:160px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:11px 14px;font-family:'DM Mono',monospace;font-size:13px;color:var(--text);letter-spacing:1px;text-transform:uppercase;outline:none;}
+.search-input::placeholder{text-transform:none;color:var(--muted);font-size:12px;letter-spacing:0;}
+.search-input:focus{border-color:var(--accent);}
+.btn-scan{background:var(--accent);color:#000;border:none;border-radius:6px;padding:11px 18px;font-weight:700;font-size:12px;cursor:pointer;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;}
+.btn-scan:disabled{opacity:0.4;cursor:not-allowed;}
+.btn-top{background:var(--surface);border:1px solid var(--border);color:var(--muted2);border-radius:6px;padding:11px 14px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;white-space:nowrap;}
+.btn-top:hover{border-color:var(--accent);color:var(--accent);}
+.btn-top:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* Progress */
+.progress-wrap{display:none;margin-bottom:14px;}
+.progress-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width 0.3s;}
+.progress-text{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:6px;letter-spacing:1px;}
+
+/* Status bar */
+.status-bar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:6px;}
+.status-left{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+.live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--bull);animation:blink 1.2s infinite;margin-right:5px;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+.status-counts{display:flex;gap:12px;}
+.sc{font-family:'DM Mono',monospace;font-size:10px;}
+.sc.bull{color:var(--bull);}
+.sc.bear{color:var(--bear);}
+.sc.muted{color:var(--muted);}
+
+/* HTF Bias */
+.bias-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+.bias-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 12px;text-align:center;}
+.bias-lbl{font-family:'DM Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;}
+.bias-val{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;}
+.bias-val.bull{color:var(--bull);}
+.bias-val.bear{color:var(--bear);}
+.bias-val.neutral{color:var(--muted2);}
+
+/* Section title */
+.sec-title{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.pill{font-size:9px;padding:2px 8px;border-radius:10px;font-weight:700;}
+.pill.bull{background:rgba(0,255,157,0.15);color:var(--bull);}
+.pill.bear{background:rgba(255,68,102,0.15);color:var(--bear);}
+.pill.none{background:rgba(74,96,112,0.15);color:var(--muted2);}
+
+/* Coin Card */
+.coin-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+.coin-card.bull{border-left:3px solid var(--bull);}
+.coin-card.bear{border-left:3px solid var(--bear);}
+.card-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
+.coin-left{display:flex;align-items:center;gap:10px;}
+.coin-sym{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;}
+.grade-badge{font-family:'DM Mono',monospace;font-size:8px;padding:3px 8px;border-radius:3px;font-weight:700;letter-spacing:1px;}
+.grade-badge.A{background:rgba(0,229,255,0.15);color:var(--accent);border:1px solid rgba(0,229,255,0.3);}
+.grade-badge.B{background:rgba(255,183,0,0.15);color:var(--warn);border:1px solid rgba(255,183,0,0.25);}
+.grade-badge.C{background:rgba(74,96,112,0.15);color:var(--muted2);border:1px solid var(--border);}
+.coin-right{text-align:right;}
+.coin-price{font-family:'DM Mono',monospace;font-size:15px;color:var(--accent);}
+.coin-chg{font-family:'DM Mono',monospace;font-size:11px;}
+.coin-chg.up{color:var(--bull);}
+.coin-chg.down{color:var(--bear);}
+
+/* C2 Alert */
+.c2-banner{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:5px;margin-bottom:10px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;}
+.c2-banner.bull{background:rgba(0,255,157,0.08);border:1px solid rgba(0,255,157,0.2);color:var(--bull);}
+.c2-banner.bear{background:rgba(255,68,102,0.08);border:1px solid rgba(255,68,102,0.2);color:var(--bear);}
+
+/* TF chips */
+.tf-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;}
+.tf-chip{font-family:'DM Mono',monospace;font-size:8px;padding:3px 8px;border-radius:3px;border:1px solid;letter-spacing:1px;}
+.tf-chip.bull{background:rgba(0,255,157,0.06);border-color:rgba(0,255,157,0.25);color:var(--bull);}
+.tf-chip.bear{background:rgba(255,68,102,0.06);border-color:rgba(255,68,102,0.25);color:var(--bear);}
+.tf-chip.c2{background:rgba(0,229,255,0.1);border-color:rgba(0,229,255,0.35);color:var(--accent);font-weight:700;}
+.tf-chip.none{background:rgba(74,96,112,0.06);border-color:var(--border);color:var(--muted);}
+
+/* POI chips */
+.poi-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;}
+.poi-chip{font-family:'DM Mono',monospace;font-size:8px;padding:3px 8px;border-radius:3px;background:rgba(255,183,0,0.07);border:1px solid rgba(255,183,0,0.2);color:var(--warn);}
+
+/* Entry grid */
+.entry-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;}
+.entry-box{background:var(--bg);border-radius:5px;padding:8px 10px;text-align:center;}
+.entry-lbl{font-size:8px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;}
+.entry-val{font-family:'DM Mono',monospace;font-size:11px;}
+.entry-val.e{color:var(--accent);}
+.entry-val.s{color:var(--bear);}
+.entry-val.t{color:var(--bull);}
+
+/* TV Link */
+.tv-link{display:inline-flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted2);text-decoration:none;letter-spacing:1px;transition:color 0.2s;}
+.tv-link:hover{color:var(--accent);}
+
+/* No results / Empty */
+.empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;line-height:1.8;}
+
+.divider{height:1px;background:var(--border);margin:16px 0;}
+.ts{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-align:right;margin-top:10px;}
+.disclaimer{font-size:10px;color:var(--muted);text-align:center;margin-top:16px;line-height:1.7;padding:12px;border-top:1px solid var(--border);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">CRT SCANNER PRO</div>
+  <div class="logo-sub">Top-Down Analysis · Auto POI Detection · Telegram Alerts · TradingView Links</div>
+
+  <!-- Telegram Settings -->
+  <div class="settings">
+    <div class="settings-title">⚙️ Telegram Settings</div>
+    <div class="settings-row">
+      <div class="sf">
+        <div class="sl">Bot Token</div>
+        <input class="si" id="tgToken" type="password" placeholder="Paste bot token">
+      </div>
+      <div class="sf" style="max-width:150px">
+        <div class="sl">Chat ID</div>
+        <input class="si" id="tgChatId" placeholder="Chat ID">
+      </div>
+      <button class="test-btn" onclick="saveAndTest()">💾 Save & Test</button>
+    </div>
+    <div class="tg-status" id="tgStatus"></div>
+  </div>
+
+  <!-- Search & Scan Buttons -->
+  <div class="search-row">
+    <input class="search-input" id="searchInput" placeholder="Search any coin (e.g. LINK, AVAX...)" onkeydown="if(event.key==='Enter')searchCoin()">
+    <button class="btn-scan" id="btnSearch" onclick="searchCoin()">🔍 Search</button>
+    <button class="btn-top" id="btn50" onclick="scanTop(50)">📊 Top 50</button>
+    <button class="btn-top" id="btn100" onclick="scanTop(100)">⚡ Top 100</button>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="progress-text" id="progressText">Scanning...</div>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="status-bar" id="statusBar" style="display:none">
+    <div class="status-left" id="statusLeft"><span class="live-dot"></span>—</div>
+    <div class="status-counts" id="statusCounts"></div>
+  </div>
+
+  <!-- HTF Bias -->
+  <div class="bias-row" id="biasRow" style="display:none">
+    <div class="bias-card">
+      <div class="bias-lbl">Monthly Bias</div>
+      <div class="bias-val" id="biasMonthly">—</div>
+    </div>
+    <div class="bias-card">
+      <div class="bias-lbl">Weekly Bias</div>
+      <div class="bias-val" id="biasWeekly">—</div>
+    </div>
+    <div class="bias-card">
+      <div class="bias-lbl">Overall HTF</div>
+      <div class="bias-val" id="biasOverall">—</div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="resultsWrap"></div>
+
+  <div class="ts" id="ts"></div>
+  <div class="disclaimer" id="disclaimer" style="display:none">
+    ⚠️ Educational purposes lang. Hindi financial advice.<br>
+    I-confirm sa TradingView bago mag-entry. C3 pa lang forming kapag nag-alert.
+  </div>
+</div>
+
+<script>
+const STABLES = ['USDT','USDC','BUSD','DAI','TUSD','FDUSD','USDE','USDS'];
+
+const TIMEFRAMES = [
+  { key:'1mo', label:'Monthly', weight:5 },
+  { key:'1w',  label:'Weekly',  weight:4 },
+  { key:'1d',  label:'Daily',   weight:3 },
+  { key:'4h',  label:'4H',      weight:2 },
+  { key:'1h',  label:'1H',      weight:1 },
+];
+
+// ---- SETTINGS ----
+function loadSettings() {
+  const t = localStorage.getItem('tg_token')||'';
+  const c = localStorage.getItem('tg_chatid')||'';
+  if(t) document.getElementById('tgToken').value = t;
+  if(c) document.getElementById('tgChatId').value = c;
+}
+
+async function saveAndTest() {
+  const token = document.getElementById('tgToken').value.trim();
+  const chatId = document.getElementById('tgChatId').value.trim();
+  if(token) localStorage.setItem('tg_token', token);
+  if(chatId) localStorage.setItem('tg_chatid', chatId);
+  const el = document.getElementById('tgStatus');
+  if(!token||!chatId){ el.textContent='❌ Fill in token and chat ID'; el.className='tg-status err'; el.style.display='block'; return; }
+  try {
+    const msg = '✅ CRT Scanner Pro connected!\n\nMag-s-send ng alerts kapag may Grade A/B/C CRT setup na na-detect. 🚀';
+    const qs = new URLSearchParams({type:'telegram',token,chat_id:chatId,text:msg}).toString();
+    const res = await fetch(`/api/binance?${qs}`);
+    const data = await res.json();
+    el.textContent = data.ok ? '✅ Saved! Test message sent to Telegram.' : `❌ ${data.description}`;
+    el.className = `tg-status ${data.ok?'ok':'err'}`;
+  } catch(e) { el.textContent=`❌ ${e.message}`; el.className='tg-status err'; }
+  el.style.display='block';
+}
+
+// ---- API ----
+async function apiFetch(type, params={}) {
+  const qs = new URLSearchParams({type,...params}).toString();
+  const res = await fetch(`/api/binance?${qs}`);
+  if(!res.ok){ const e=await res.json().catch(()=>({})); throw new Error(e.error||`HTTP ${res.status}`); }
+  return res.json();
+}
+
+async function fetchOHLC(symbol, type) {
+  const data = await apiFetch(type, {symbol, limit:100});
+  if(data.Response==='Error') throw new Error(data.Message);
+  return (data.Data?.Data||[])
+    .map(k=>({t:k.time*1000,o:k.open,h:k.high,l:k.low,c:k.close,v:k.volumefrom}))
+    .filter(c=>c.h>0&&c.l>0);
+}
+
+async function fetchPriceData(symbol) {
+  const data = await apiFetch('price',{symbol});
+  const info = data.RAW?.[symbol]?.USD;
+  return info?{price:info.PRICE,change24h:info.CHANGEPCT24HOUR}:null;
+}
+
+// ---- HTF BIAS ----
+function getTrend(candles) {
+  if(candles.length < 6) return 'neutral';
+  const last5 = candles.slice(-5), prev5 = candles.slice(-10,-5);
+  if(!prev5.length) return 'neutral';
+  const avgLast = last5.reduce((a,b)=>a+b.c,0)/last5.length;
+  const avgPrev = prev5.reduce((a,b)=>a+b.c,0)/prev5.length;
+  if(avgLast > avgPrev*1.02) return 'bull';
+  if(avgLast < avgPrev*0.98) return 'bear';
+  return 'neutral';
+}
+
+function getHTFBias(monthlyC, weeklyC) {
+  const m = getTrend(monthlyC), w = getTrend(weeklyC);
+  if(m===w && m!=='neutral') return m;
+  if(m!=='neutral') return m;
+  if(w!=='neutral') return w;
+  return 'neutral';
+}
+
+// ---- POI DETECTION ----
+function detectPOIs(candles) {
+  const pois = [];
+  for(let i=5; i<candles.length-3; i++) {
+    const c=candles[i], next=candles[i+1];
+    const body=Math.abs(c.c-c.o), range=(c.h-c.l)||0.0001;
+    const avgBody=candles.slice(Math.max(0,i-5),i).reduce((a,b)=>a+Math.abs(b.c-b.o),0)/5||0.0001;
+
+    // OB
+    if(body >= avgBody*1.2) {
+      if(c.c<c.o && next.c>c.h) pois.push({type:'bull',kind:'OB',high:c.h,low:c.l,mid:(c.h+c.l)/2});
+      if(c.c>c.o && next.c<c.l) pois.push({type:'bear',kind:'OB',high:c.h,low:c.l,mid:(c.h+c.l)/2});
+    }
+
+    // FVG
+    if(i>=1 && i<candles.length-2) {
+      const c0=candles[i-1], c2=candles[i+1];
+      if(c0.h<c2.l && (c2.l-c0.h)/c0.h>0.002) pois.push({type:'bull',kind:'FVG',high:c2.l,low:c0.h,mid:(c0.h+c2.l)/2});
+      if(c0.l>c2.h && (c0.l-c2.h)/c2.h>0.002) pois.push({type:'bear',kind:'FVG',high:c0.l,low:c2.h,mid:(c0.l+c2.h)/2});
+    }
+
+    // Rejection Block
+    const uWick=c.h-Math.max(c.o,c.c), lWick=Math.min(c.o,c.c)-c.l;
+    if(uWick/range>0.65) pois.push({type:'bear',kind:'RB',high:c.h,low:Math.max(c.o,c.c),mid:(c.h+Math.max(c.o,c.c))/2});
+    if(lWick/range>0.65) pois.push({type:'bull',kind:'RB',high:Math.min(c.o,c.c),low:c.l,mid:(Math.min(c.o,c.c)+c.l)/2});
+  }
+  return pois.slice(-15);
+}
+
+function findNearPOI(price, pois, direction, pct=0.03) {
+  return pois.find(p=>(p.type===direction||direction==='neutral') && Math.abs(price-p.mid)/(p.mid||1)<pct)||null;
+}
+
+// ---- C1 VALIDATION ----
+function validateC1(c1, candles, htfBias, pois) {
+  const slice = candles.slice(-15,-1);
+  const avgBody = slice.length ? slice.reduce((a,b)=>a+Math.abs(b.c-b.o),0)/slice.length : 0.0001;
+  const body = Math.abs(c1.c-c1.o);
+  const range = (c1.h-c1.l)||0.0001;
+  const isLarge = body >= avgBody*1.5;
+  const notDoji = (body/range) >= 0.4;
+  const c1Dir = c1.c>c1.o?'bull':'bear';
+  const biasOk = htfBias==='neutral' || c1Dir===htfBias;
+  const poi = findNearPOI((c1.h+c1.l)/2, pois, htfBias==='neutral'?c1Dir:htfBias);
+  return { valid:isLarge&&notDoji&&biasOk&&!!poi, isLarge, notDoji, biasOk, poi, direction:c1Dir };
+}
+
+// ---- C2 DETECTION ----
+function detectC2(c1, c2, htfBias) {
+  const c1High=c1.h, c1Low=c1.l, c1Mid=(c1High+c1Low)/2;
+  const sweptLow=c2.l<c1Low, sweptHigh=c2.h>c1High;
+  let direction=null, sweepPct=0;
+  if((htfBias==='bull'||htfBias==='neutral') && sweptLow) { direction='bull'; sweepPct=((c1Low-c2.l)/c1Low*100); }
+  else if((htfBias==='bear'||htfBias==='neutral') && sweptHigh) { direction='bear'; sweepPct=((c2.h-c1High)/c1High*100); }
+  if(!direction) return null;
+  return {
+    direction, sweepPct:sweepPct.toFixed(2),
+    c1Mid, c1High, c1Low,
+    entryZone: direction==='bull'?{low:fp(c1Low),high:fp(c1Mid)}:{low:fp(c1Mid),high:fp(c1High)},
+    stopLoss: direction==='bull'?fp(c2.l*0.997):fp(c2.h*1.003),
+    target: direction==='bull'?fp(c1High):fp(c1Low),
+  };
+}
+
+// ---- SCAN ONE TF ----
+function scanTF(candles, htfBias) {
+  if(candles.length<6) return {signal:'none'};
+  const pois = detectPOIs(candles);
+  for(let i=candles.length-16; i<candles.length-2; i++) {
+    if(i<1) continue;
+    const c1=candles[i], c2=candles[i+1];
+    const c1v = validateC1(c1, candles.slice(0,i+1), htfBias, pois);
+    if(!c1v.valid) continue;
+    const c2s = detectC2(c1, c2, htfBias);
+    if(!c2s) continue;
+    return { signal:'c2closed', direction:c2s.direction, c1v, c2s, pois:pois.filter(p=>p.type===c2s.direction).slice(-2) };
+  }
+  return {signal:'none'};
+}
+
+// ---- GRADE ----
+function computeGrade(tfResults) {
+  const WEIGHTS=[5,4,3,2,1];
+  let bullScore=0, bearScore=0, bullTFs=[], bearTFs=[];
+  tfResults.forEach((r,i)=>{
+    if(!r||r.signal!=='c2closed') return;
+    const w=WEIGHTS[i], tf=TIMEFRAMES[i];
+    if(r.direction==='bull'){bullScore+=w;bullTFs.push(tf.label);}
+    else if(r.direction==='bear'){bearScore+=w;bearTFs.push(tf.label);}
+  });
+  const direction=bullScore>=bearScore?'bull':'bear';
+  const score=Math.max(bullScore,bearScore);
+  const alignedTFs=direction==='bull'?bullTFs:bearTFs;
+  if(alignedTFs.length<2) return null;
+  let grade=null;
+  if(score>=9&&alignedTFs.length>=3) grade='A';
+  else if(score>=6&&alignedTFs.length>=3) grade='B';
+  else if(score>=4&&alignedTFs.length>=2) grade='C';
+  if(!grade) return null;
+  return {grade,direction,score,alignedTFs};
+}
+
+// ---- FORMAT ----
+function fp(p) {
+  if(!p&&p!==0) return '—';
+  if(p>=10000) return '$'+p.toLocaleString(undefined,{maximumFractionDigits:0});
+  if(p>=1) return '$'+p.toFixed(2);
+  if(p>=0.01) return '$'+p.toFixed(4);
+  return '$'+p.toFixed(8);
+}
+
+// ---- RENDER COIN CARD ----
+function renderCard(symbol, gradeResult, tfResults, priceInfo, htfBias) {
+  const {grade,direction,alignedTFs} = gradeResult;
+  const emoji = direction==='bull'?'🟢':'🔴';
+  const gradeEmoji = grade==='A'?'🏆':grade==='B'?'🥈':'🥉';
+  const best = tfResults.find(r=>r?.signal==='c2closed'&&r?.direction===direction);
+  const price = priceInfo?.price;
+  const chg = priceInfo?.change24h||0;
+  const tvLink = `https://www.tradingview.com/chart/?symbol=BINANCE:${symbol}USDT`;
+
+  // TF chips
+  const tfChips = TIMEFRAMES.map((tf,i)=>{
+    const r = tfResults[i];
+    if(!r||r.signal==='none') return `<div class="tf-chip none">— ${tf.label}</div>`;
+    const cls = r.direction==='bull'?'bull':'bear';
+    const icon = r.direction==='bull'?'✅':'🔴';
+    return `<div class="tf-chip ${cls}">${icon} ${tf.label}</div>`;
+  }).join('');
+
+  // POI chips
+  const poiChips = (best?.pois||[]).map(p=>
+    `<div class="poi-chip">🎯 ${p.kind} ${fp(p.low)}–${fp(p.high)}</div>`
+  ).join('');
+
+  return `<div class="coin-card ${direction}">
+    <div class="card-top">
+      <div class="coin-left">
+        <div class="coin-sym">${symbol}</div>
+        <div class="grade-badge ${grade}">${gradeEmoji} GRADE ${grade}</div>
+      </div>
+      <div class="coin-right">
+        <div class="coin-price">${fp(price)}</div>
+        <div class="coin-chg ${chg>=0?'up':'down'}">${chg>=0?'+':''}${chg.toFixed(2)}%</div>
+      </div>
+    </div>
+
+    <div class="c2-banner ${direction}">
+      ⚡ C2 CLOSED — ${direction==='bull'?'Swept below C1 low':'Swept above C1 high'} (${best?.c2s?.sweepPct}%) · WAIT FOR C3 ENTRY
+    </div>
+
+    <div class="tf-row">${tfChips}</div>
+    ${poiChips?`<div class="poi-row">${poiChips}</div>`:''}
+
+    <div class="entry-grid">
+      <div class="entry-box">
+        <div class="entry-lbl">Entry Zone</div>
+        <div class="entry-val e">${best?.c2s?.entryZone?.low}–${best?.c2s?.entryZone?.high}</div>
+      </div>
+      <div class="entry-box">
+        <div class="entry-lbl">Stop Loss</div>
+        <div class="entry-val s">${best?.c2s?.stopLoss}</div>
+      </div>
+      <div class="entry-box">
+        <div class="entry-lbl">Target</div>
+        <div class="entry-val t">${best?.c2s?.target}</div>
+      </div>
+    </div>
+
+    <a class="tv-link" href="${tvLink}" target="_blank">
+      📈 View on TradingView → BINANCE:${symbol}USDT
+    </a>
+  </div>`;
+}
+
+// ---- SEND TELEGRAM ----
+async function sendTelegramAlert(symbol, gradeResult, tfResults, priceInfo) {
+  const token = localStorage.getItem('tg_token');
+  const chatId = localStorage.getItem('tg_chatid');
+  if(!token||!chatId) return;
+
+  const {grade,direction,alignedTFs} = gradeResult;
+  const emoji=direction==='bull'?'🟢':'🔴';
+  const gradeEmoji=grade==='A'?'🏆':grade==='B'?'🥈':'🥉';
+  const best=tfResults.find(r=>r?.signal==='c2closed'&&r?.direction===direction);
+  const tvLink=`https://www.tradingview.com/chart/?symbol=BINANCE:${symbol}USDT`;
+  const now=new Date().toLocaleString('en-PH',{timeZone:'Asia/Manila'});
+
+  const msg=`${emoji} ${gradeEmoji} <b>GRADE ${grade} ${direction.toUpperCase()} CRT ALERT!</b>
+
+📊 Coin: <b>${symbol}/USDT</b>
+💰 Price: ${fp(priceInfo?.price)} ${priceInfo?.change24h>=0?'+':''}${priceInfo?.change24h?.toFixed(2)||'0'}%
+⏰ ${now}
+
+<b>Top-Down Alignment:</b>
+${alignedTFs.map(tf=>`✅ ${tf}`).join('\n')}
+
+⚡ C2 CLOSED — Swept ${direction==='bull'?'below':'above'} C1 ${direction==='bull'?'low':'high'} by ${best?.c2s?.sweepPct}%
+
+📥 Entry: ${best?.c2s?.entryZone?.low} – ${best?.c2s?.entryZone?.high}
+🛑 SL: ${best?.c2s?.stopLoss}
+💰 Target: ${best?.c2s?.target}
+
+📈 <a href="${tvLink}">View Chart on TradingView</a>
+
+⚠️ <i>C3 forming pa — confirm muna bago mag-entry. Educational only.</i>`;
+
+  try {
+    const qs=new URLSearchParams({type:'telegram',token,chat_id:chatId,text:msg}).toString();
+    await fetch(`/api/binance?${qs}`);
+  } catch(e){}
+}
+
+// ---- MAIN SCAN ----
+let htfBiasGlobal = 'neutral';
+let scanInProgress = false;
+
+async function processCoin(symbol) {
+  try {
+    const allCandles = await Promise.all(TIMEFRAMES.map(tf=>fetchOHLC(symbol,tf.key).catch(()=>[])));
+    const htfBias = getHTFBias(allCandles[0],allCandles[1]);
+    const tfResults = allCandles.map((c,i)=>c.length>5?scanTF(c,htfBias):{signal:'none'});
+    const gradeResult = computeGrade(tfResults);
+    if(!gradeResult) return null;
+    const priceInfo = await fetchPriceData(symbol).catch(()=>null);
+    return {symbol, gradeResult, tfResults, htfBias, priceInfo};
+  } catch(e){ return null; }
+}
+
+async function scanTop(limit) {
+  if(scanInProgress) return;
+  scanInProgress = true;
+  setUIScanning(true);
+
+  try {
+    const data = await apiFetch(limit===50?'top50':'top100');
+    const symbols = (data.Data||[])
+      .map(d=>d.CoinInfo?.Name)
+      .filter(s=>s&&!STABLES.includes(s));
+
+    const results = [];
+    let scanned = 0;
+
+    for(let i=0; i<symbols.length; i+=5) {
+      const batch = symbols.slice(i,i+5);
+      const batchRes = await Promise.all(batch.map(processCoin));
+      batchRes.forEach(r=>{ if(r) results.push(r); });
+      scanned += batch.length;
+      updateProgress(scanned, symbols.length, `Scanning ${scanned}/${symbols.length} coins...`);
+      if(i+5<symbols.length) await delay(800);
+    }
+
+    // Send Telegram alerts for valid setups
+    const sentKeys = new Set();
+    for(const r of results) {
+      const key = `${r.symbol}-${r.gradeResult.direction}-${r.gradeResult.grade}`;
+      if(!sentKeys.has(key)) {
+        sentKeys.add(key);
+        await sendTelegramAlert(r.symbol, r.gradeResult, r.tfResults, r.priceInfo);
+        await delay(500);
+      }
+    }
+
+    renderResults(results, symbols.length, limit);
+
+  } catch(e) {
+    showError(e.message);
+  }
+
+  scanInProgress = false;
+  setUIScanning(false);
+}
+
+async function searchCoin() {
+  const raw = document.getElementById('searchInput').value.trim().toUpperCase();
+  if(!raw) return;
+  if(scanInProgress) return;
+  scanInProgress = true;
+  setUIScanning(true);
+  updateProgress(0,1,`Scanning ${raw}...`);
+
+  try {
+    const result = await processCoin(raw);
+    if(!result) {
+      renderResults([], 1, 0, raw);
+    } else {
+      await sendTelegramAlert(result.symbol, result.gradeResult, result.tfResults, result.priceInfo);
+      renderResults([result], 1, 0, raw);
+    }
+  } catch(e){ showError(e.message); }
+
+  scanInProgress = false;
+  setUIScanning(false);
+}
+
+function renderResults(results, totalScanned, limit, searchSym='') {
+  const bullSetups = results.filter(r=>r.gradeResult.direction==='bull');
+  const bearSetups = results.filter(r=>r.gradeResult.direction==='bear');
+
+  // Status bar
+  document.getElementById('statusBar').style.display='flex';
+  document.getElementById('statusLeft').innerHTML=
+    `<span class="live-dot"></span>${searchSym?`Scanned: ${searchSym}`:`Scanned ${totalScanned} coins`} · ${new Date().toLocaleTimeString()}`;
+  document.getElementById('statusCounts').innerHTML=
+    `<div class="sc bull">🟢 ${bullSetups.length} Bull</div>
+     <div class="sc bear">🔴 ${bearSetups.length} Bear</div>
+     <div class="sc muted">⚪ ${totalScanned-results.length} No Setup</div>`;
+
+  // HTF Bias (from first result or neutral)
+  document.getElementById('biasRow').style.display='grid';
+  if(results.length>0) {
+    const bias = results[0].htfBias;
+    ['biasMonthly','biasWeekly','biasOverall'].forEach(id=>{
+      const el=document.getElementById(id);
+      el.textContent = bias==='bull'?'🟢 BULLISH':bias==='bear'?'🔴 BEARISH':'⚪ NEUTRAL';
+      el.className = `bias-val ${bias}`;
+    });
+    htfBiasGlobal = bias;
+  }
+
+  // Results
+  const wrap = document.getElementById('resultsWrap');
+  if(results.length===0) {
+    wrap.innerHTML=`<div class="empty">
+      ⚪ Walang valid CRT setup na-detect<br>
+      <span style="font-size:11px;color:var(--muted)">Lahat ng coins na-scan — walang Grade A/B/C setup ngayon.<br>Subukan ulit sa susunod na candle close.</span>
+    </div>`;
+    document.getElementById('disclaimer').style.display='block';
+    return;
+  }
+
+  let html = '';
+  if(bullSetups.length>0) {
+    html += `<div class="sec-title">Valid Setups <span class="pill bull">${bullSetups.length} BULL</span>${bearSetups.length>0?`<span class="pill bear">${bearSetups.length} BEAR</span>`:''}</div>`;
+  }
+
+  // Sort by grade A first
+  const sorted = results.sort((a,b)=>{
+    const gOrder={'A':0,'B':1,'C':2};
+    return (gOrder[a.gradeResult.grade]||3)-(gOrder[b.gradeResult.grade]||3);
+  });
+
+  sorted.forEach(r=>{
+    html += renderCard(r.symbol, r.gradeResult, r.tfResults, r.priceInfo, r.htfBias);
+  });
+
+  if(bullSetups.length===0&&bearSetups.length>0) {
+    html = `<div class="sec-title">Valid Setups <span class="pill bear">${bearSetups.length} BEAR</span></div>` + html;
+  }
+
+  wrap.innerHTML = html;
+  document.getElementById('ts').textContent = `Last scan: ${new Date().toLocaleString()} · CryptoCompare`;
+  document.getElementById('disclaimer').style.display='block';
+}
+
+function showError(msg) {
+  document.getElementById('resultsWrap').innerHTML=
+    `<div style="background:rgba(255,68,102,0.08);border:1px solid rgba(255,68,102,0.3);border-radius:6px;padding:14px 18px;color:var(--bear);font-size:13px;text-align:center;">❌ ${msg}</div>`;
+}
+
+function setUIScanning(on) {
+  document.getElementById('btnSearch').disabled=on;
+  document.getElementById('btn50').disabled=on;
+  document.getElementById('btn100').disabled=on;
+  document.getElementById('progressWrap').style.display=on?'block':'none';
+  if(!on) { document.getElementById('progressFill').style.width='100%'; }
+}
+
+function updateProgress(done, total, text) {
+  const pct = total>0?Math.round(done/total*100):0;
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressText').textContent=text;
+}
+
+function delay(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+loadSettings();
+</script>
+</body>
+</html>
